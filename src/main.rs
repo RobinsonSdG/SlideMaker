@@ -22,23 +22,25 @@
 //     target: String
 // }
 
-use std::fs::{File, self};
+use std::{fs::{File, self}, io::{BufReader, BufWriter}};
 
 use minidom::Element;
 use std::io::Write;
+use regex::Regex;
+use std::io::BufRead;
 
 fn main() -> std::io::Result<()> {
-    let src = "DernierJetInch";
-    add_slide(src, 2)?;
+    let src = "DernierJetInch2";
+    add_slide(src, 3)?;
     Ok(())
 }
 
 
 fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     // 1. copier slideX.xml
-    fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num-1), format!("{}/ppt/slides/slide{}.xml", src, slide_num))?;
+    // fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num-1), format!("{}/ppt/slides/slide{}.xml", src, slide_num))?;
     // 2. modifier le slideX.xml:
-    update_slide(format!("{}/ppt/slides/slide{}.xml", src, slide_num), slide_num)?;
+    update_slide(src, slide_num, 2)?;
     /* 
         - La couleur du texte de variance: <a:srgbClr val="FF0000" />
         - La valeur de la variance: <a:t>-1</a:t>
@@ -48,23 +50,49 @@ fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num-1), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num))?;
     // fs::copy("TroisiemeJet/ppt/slides/_rels/slide3.xml.rels", "TroisiemeJet/ppt/slides/_rels/slide4.xml.rels");
     // 4. modifier le presentation.xml.rels (rajouter la slide et update les chiffres)
-    fs::copy(format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num-1), format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num))?;
-    let rId = update_rels(format!("{}/ppt/_rels/presentation.xml.rels", src), slide_num)?;
+    // fs::copy(format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num-1), format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num))?;
+    let r_id = update_rels(format!("{}/ppt/_rels/presentation.xml.rels", src), slide_num)?;
     // 5. modifier le presentation.xml:  ajouter le <p:sldId id="261" r:id="rIdX" /> -> incrémenté de 1 le id et mettre le bon rId
     Ok(())
 }
 
 
 //Possibilité de créer le nouveau fichier en même temps
-fn update_slide(input_file_path: String, slide_num: i8, rank: i8) -> std::io::Result<()> {
+fn update_slide(src: &str, slide_num: i8, rank: i8) -> std::io::Result<()> {
     let search_pattern = r"<a:t>-\d+</a:t>";
     let replace_with = "<a:t>+2</a:t>"; //rank
 
-    let input_file = File::open(input_file_path)?;
+    let input_file_path = format!("{}/ppt/slides/slide{}.xml", src, slide_num-1);
+    let output_file_path = format!("{}/ppt/slides/slide{}.xml", src, slide_num);
+
+    let mut input_file = File::open(input_file_path)?;
+
+    // Ouvrez le fichier de sortie en écriture
+    let output_file = match File::create(output_file_path) {
+        Ok(file) => file,
+        Err(err) => {
+            panic!("Erreur lors de la création du fichier de sortie : {}", err);
+        }
+    };
+
+    // Créez un lecteur pour le fichier d'entrée
+    let reader = BufReader::new(input_file);
+
+    // Créez un écrivain pour le fichier de sortie
+    let mut writer = BufWriter::new(output_file);
 
     // Créez une expression régulière pour la recherche
     let regex = Regex::new(search_pattern).expect("Erreur lors de la création de l'expression régulière");
 
+    for line in reader.lines() {
+        let line = line.expect("Erreur lors de la lecture de la ligne");
+
+        // Utilisez l'expression régulière pour rechercher et remplacer dans la ligne
+        let modified_line = regex.replace_all(&line, replace_with);
+
+        // Écrivez le résultat modifié dans le fichier de sortie
+        writeln!(writer, "{}", modified_line).expect("Erreur lors de l'écriture dans le fichier de sortie");
+    }
     Ok(())
 }
 
