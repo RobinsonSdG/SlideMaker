@@ -38,6 +38,7 @@ fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     // 1. copier slideX.xml
     fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num-1), format!("{}/ppt/slides/slide{}.xml", src, slide_num))?;
     // 2. modifier le slideX.xml:
+    update_slide(format!("{}/ppt/slides/slide{}.xml", src, slide_num), slide_num)?;
     /* 
         - La couleur du texte de variance: <a:srgbClr val="FF0000" />
         - La valeur de la variance: <a:t>-1</a:t>
@@ -52,6 +53,21 @@ fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     // 5. modifier le presentation.xml:  ajouter le <p:sldId id="261" r:id="rIdX" /> -> incrémenté de 1 le id et mettre le bon rId
     Ok(())
 }
+
+
+//Possibilité de créer le nouveau fichier en même temps
+fn update_slide(input_file_path: String, slide_num: i8, rank: i8) -> std::io::Result<()> {
+    let search_pattern = r"<a:t>-\d+</a:t>";
+    let replace_with = "<a:t>+2</a:t>"; //rank
+
+    let input_file = File::open(input_file_path)?;
+
+    // Créez une expression régulière pour la recherche
+    let regex = Regex::new(search_pattern).expect("Erreur lors de la création de l'expression régulière");
+
+    Ok(())
+}
+
 
 fn update_rels(src: String, slide_num: i8) -> std::io::Result<i32> {
     let data = std::fs::read_to_string(&src)?;
@@ -77,6 +93,7 @@ fn update_rels(src: String, slide_num: i8) -> std::io::Result<i32> {
     file.write_all(&buf)?;
     Ok(id)
 }
+
 
 
 
