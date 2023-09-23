@@ -30,7 +30,7 @@ use regex::Regex;
 use std::io::BufRead;
 
 fn main() -> std::io::Result<()> {
-    let src = "DernierJetInch2";
+    let src = "DernierJetInch3";
     add_slide(src, 3)?;
     Ok(())
 }
@@ -40,7 +40,7 @@ fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     // 1. copier slideX.xml
     // fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num-1), format!("{}/ppt/slides/slide{}.xml", src, slide_num))?;
     // 2. modifier le slideX.xml:
-    update_slide(src, slide_num, 2)?;
+    update_slide(src, slide_num, Some(3))?;
     /* 
         - La couleur du texte de variance: <a:srgbClr val="FF0000" />
         - La valeur de la variance: <a:t>-1</a:t>
@@ -53,15 +53,65 @@ fn add_slide(src: &str, slide_num: i8) -> std::io::Result<()> {
     // fs::copy(format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num-1), format!("{}/ppt/_rels/slide{}.xml.rels", src, slide_num))?;
     let r_id = update_rels(format!("{}/ppt/_rels/presentation.xml.rels", src), slide_num)?;
     // 5. modifier le presentation.xml:  ajouter le <p:sldId id="261" r:id="rIdX" /> -> incrémenté de 1 le id et mettre le bon rId
+    update_presentation(src, r_id);
     Ok(())
 }
 
+fn update_presentation(src: &str, r_id: i32) -> std::io::Result<()> {
+    let input_file_path = format!("{}/ppt/presentation.xml", src); // Remplacez par le chemin de votre fichier XML d'entrée
+
+    // Lire le contenu du fichier XML en tant que texte
+    let mut xml_content = std::fs::read_to_string(&input_file_path).expect("Impossible de lire le fichier");
+
+    // Utiliser une expression régulière pour rechercher la dernière ligne <p:sldId> et obtenir les valeurs actuelles
+    let re = Regex::new(r#"<p:sldId id="(\d+)" r:id="rId(\d+)" />"#).expect("Erreur dans l'expression régulière");
+    let mut last_id: i32 = 0;
+    let mut last_match_end = 0;
+
+    for captures in re.captures_iter(&xml_content) {
+        println!("{:?}", captures);
+
+        last_id = captures[1].parse().expect("Impossible de convertir l'id en entier");
+        last_match_end = captures.get(0).unwrap().end();
+    }
+
+    
+    // Calculer les nouvelles valeurs
+    let new_id = last_id + 1;
+
+    // Construire la nouvelle ligne <p:sldId>
+    let new_line = format!("<p:sldId id=\"{}\" r:id=\"rId{}\" />", new_id, r_id);
+
+    // Ajouter la nouvelle ligne à la fin du contenu XML
+    xml_content.insert_str(last_match_end, &new_line);
+
+    // Écrire le contenu modifié dans le fichier
+    std::fs::write(&input_file_path, xml_content).expect("Impossible d'écrire dans le fichier");
+    println!("Le fichier a été modifié avec succès.");
+   
+
+    Ok(())
+}
 
 //Possibilité de créer le nouveau fichier en même temps
-fn update_slide(src: &str, slide_num: i8, rank: i8) -> std::io::Result<()> {
-    let search_pattern = r"<a:t>-\d+</a:t>";
-    let replace_with = "<a:t>+2</a:t>"; //rank
+fn update_slide(src: &str, slide_num: i8, rank: Option<i8>) -> std::io::Result<()> {
 
+    let search_pattern = r"<a:t>-?\d+</a:t>";
+
+    let mut replace_with = String::new();
+    match rank {
+        Some(r) => {
+            if r > 0 {
+                replace_with = format!("<a:t>+{}</a:t>", r); //r
+            } else if r < 0 {
+                replace_with = format!("<a:t>-{}</a:t>", r); //r
+            } else if r == 0 {
+                replace_with = "<a:t>=</a:t>".to_string(); //rank
+            }
+        },
+        None => replace_with = r"<a:t>new</a:t>".to_string(),
+    };
+    
     let input_file_path = format!("{}/ppt/slides/slide{}.xml", src, slide_num-1);
     let output_file_path = format!("{}/ppt/slides/slide{}.xml", src, slide_num);
 
@@ -88,7 +138,7 @@ fn update_slide(src: &str, slide_num: i8, rank: i8) -> std::io::Result<()> {
         let line = line.expect("Erreur lors de la lecture de la ligne");
 
         // Utilisez l'expression régulière pour rechercher et remplacer dans la ligne
-        let modified_line = regex.replace_all(&line, replace_with);
+        let modified_line = regex.replace_all(&line, &replace_with);
 
         // Écrivez le résultat modifié dans le fichier de sortie
         writeln!(writer, "{}", modified_line).expect("Erreur lors de l'écriture dans le fichier de sortie");
