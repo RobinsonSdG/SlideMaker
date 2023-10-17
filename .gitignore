@@ -16,3 +16,6 @@ Cargo.lock
 /Templates/*
 *.pptx
 *.xml
+Media
+PourComparer
+SlideTemplateStp
