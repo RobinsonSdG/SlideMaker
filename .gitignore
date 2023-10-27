@@ -13,9 +13,11 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
-/Templates/*
+Templates
 *.pptx
 *.xml
+*.zip
 Media
 PourComparer
 SlideTemplateStp
+Tmp
