@@ -114,7 +114,7 @@ pub fn update_miniature_images(src: &str, ranking: &Ranking) -> io::Result<()> {
         }
     }
 
-    update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), "../media/coverPage.png", 1)?;
+    update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), "../media/coverPage.png", 3)?;
     Ok(())
 }
 

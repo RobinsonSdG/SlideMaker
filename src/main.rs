@@ -12,7 +12,7 @@ use std::path::Path;
 fn main() -> std::io::Result<()> {
     let mut src = "SlideTemplateStp";
     let year = 2023;
-    let week = 9;
+    let week = 50;
     
     let ranking = operations::get_ranking(year, week);
     let previous_ranking = operations::get_ranking(year, week-1);
@@ -40,8 +40,8 @@ fn main() -> std::io::Result<()> {
                     create::add_color_slide(src, 1, nb, counter_slide)?;
                     // miniature
                     match miniature_image {
-                        0 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 0)?,
-                        1 | 2 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 2)?,
+                        0 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 1)?,
+                        1 | 2 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 4)?,
                         _ => {},
                     };
                     miniature_image += 1;

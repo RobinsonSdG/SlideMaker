@@ -79,7 +79,7 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
                     let relative_image_path = format!("../media/{}", image.as_ref().unwrap().file_name().to_string_lossy());
                     fs::copy(image_path, new_image_path)?;
                     // println!("bonjour: {}", &image.unwrap().path().display());
-                    update::update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), &relative_image_path, -1)?;
+                    update::update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), &relative_image_path, 1)?;
                     break;
                 }
             }
