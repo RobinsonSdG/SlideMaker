@@ -1,7 +1,8 @@
-use std::fs;
+use std::{fs::{self, File}, io::{Read, Write}};
 
 use jumprankingsapi::models::ranking_model::Rank;
 use rand::Rng;
+use regex::Regex;
 use walkdir::WalkDir;
 
 use super::update;
@@ -11,36 +12,37 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
     let slide_num: i8;
 
     let mut variation: i8 = 0;
+    if let Some(prev) = previous_rank_position {
+        variation = prev - rank_position
+    }
     if rank_position == 1 {
         slide_num = 5;
-    } else if let Some(prev) = previous_rank_position {
-        variation = prev - rank_position;
-        if variation < 0 {
-            if rank_position > 7 {
-                slide_num = 4;
-            } else {
-                slide_num = 6;
-            }
-        } else if variation > 0 {
-            if (variation < 3) && rank_position < 3 {
-                slide_num = 6;
-            } else if rank_position < 3 || (rank_position < 7 && (variation > 3)){
-                slide_num = 3;
-            } else if rank_position < 7 && (variation < 3) {
-                slide_num = 4;
-            } else {
-                slide_num = 6;
-            }
+    } else if variation < 0 {
+        if rank_position > 7 {
+            slide_num = 4;
         } else {
             slide_num = 6;
         }
-    } else if rank_position < 3 && rank_position >=7 {
-        slide_num = 6;
-    } else if rank_position >= 3 {
-        slide_num = 3;
+    } else if variation > 0 {
+        if (variation < 3) && rank_position < 3 {
+            slide_num = 6;
+        } else if rank_position < 3 || (rank_position < 7 && (variation > 3)){
+            slide_num = 3;
+        } else if rank_position < 7 && (variation < 3) {
+            slide_num = 4;
+        } else {
+            slide_num = 6;
+        }
     } else {
-        slide_num = 4;
+        slide_num = 6;
     }
+    // if rank_position < 3 && rank_position >=7 {
+    //     slide_num = 6;
+    // } else if rank_position >= 3 {
+    //     slide_num = 3;
+    // } else {
+    //     slide_num = 4;
+    // }
     
     // 1. copier slideX.xml
     // fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num-1), format!("{}/ppt/slides/slide{}.xml", src, slide_num))?;
@@ -56,36 +58,7 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
     - Le texte sous l'image: <a:t>SAKAMOTO DAYS (#143)</a:t>   
     */
     // 3. copier le slideX.xml.rels
-    fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
-
-    let mut rng = rand::thread_rng();
-    
-    for file in fs::read_dir("./Media").unwrap() {
-        let name: String = rank.name.chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
-        let file_name = file.unwrap().file_name();
-        let file_name_to_compare: String = file_name.to_string_lossy().chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
-        if file_name_to_compare.eq_ignore_ascii_case(&name) {
-            let path = format!("Media/{}", &name);
-            let nb_images = WalkDir::new(path).into_iter().count();
-            let mut img_number = 0;
-            if nb_images > 1 {
-                img_number = rng.gen_range(0..nb_images-1);
-            }
-            for (i, image) in fs::read_dir(format!("./Media/{}", &file_name.to_string_lossy())).unwrap().enumerate() {
-                if i == img_number {
-                    // img.save(format!("{}/ppt/media/colorPage{}.png", src, nb)).unwrap();
-                    let image_path = image.as_ref().unwrap().path();
-                    let new_image_path = format!("{}/ppt/media/{}", src, image.as_ref().unwrap().file_name().to_string_lossy());
-                    let relative_image_path = format!("../media/{}", image.as_ref().unwrap().file_name().to_string_lossy());
-                    fs::copy(image_path, new_image_path)?;
-                    // println!("bonjour: {}", &image.unwrap().path().display());
-                    update::update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), &relative_image_path, 1)?;
-                    break;
-                }
-            }
-            break;
-        }
-    }
+    update::update_image_from_media(src, slide_num, rank, current_slide, rank_position)?;
     
     // Créer fonction pour prendre l'image dans le bon dossier en fonction du nom
     // fs::copy("TroisiemeJet/ppt/slides/_rels/slide3.xml.rels", "TroisiemeJet/ppt/slides/_rels/slide4.xml.rels");
@@ -104,6 +77,40 @@ pub fn add_color_slide(src: &str, slide_num: i8, nb_slide: i8, current_slide: i8
     fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
     
     update::update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), format!("../media/colorPage{}.png", &nb_slide).as_str(), -1)?;
+    let r_id = update::update_rels(format!("{}/ppt/_rels/presentation.xml.rels", src), current_slide)?;
+    // 5. modifier le presentation.xml:  ajouter le <p:sldId id="261" r:id="rIdX" /> -> incrémenté de 1 le id et mettre le bon rId
+    update::update_presentation_xml(src, r_id)?;
+    Ok(())
+}
+
+pub fn add_absent_slide(src: &str, slide_num: i8, current_slide: i8, rank: &Rank) -> std::io::Result<()> {
+    // 1. copier slideX.xml
+    // fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num), format!("{}/ppt/slides/slide{}.xml", src, current_slide))?;
+
+    // fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
+    
+    // update name
+    let input_filename = format!("{}/ppt/slides/slide{}.xml", src, slide_num);
+    let output_filename = format!("{}/ppt/slides/slide{}.xml", src, current_slide);
+    let mut input_file = File::open(input_filename)?;
+    let mut input_contents = String::new();
+    input_file.read_to_string(&mut input_contents)?;
+    let re = Regex::new(r"<a:t>([a-zA-Z\s]+)</a:t>").unwrap();
+    
+    let mut modified_contents: String = "".to_string();
+    if let Some(caps) = re.captures(&input_contents) {
+        let first_match = caps.get(0).unwrap().as_str();
+        
+        modified_contents = input_contents.replacen(first_match, format!("<a:t>{}</a:t>", &rank.name).as_str(), 1);
+        
+        println!("Remplacement de la deuxième occurrence terminé. Le résultat a été enregistré dans '{}'", &output_filename);
+    }
+
+    let mut output_file = File::create(&output_filename)?;
+    output_file.write_all(modified_contents.as_bytes())?;
+    
+    update::update_image_from_media(src, slide_num, rank, current_slide, 0)?;
+
     let r_id = update::update_rels(format!("{}/ppt/_rels/presentation.xml.rels", src), current_slide)?;
     // 5. modifier le presentation.xml:  ajouter le <p:sldId id="261" r:id="rIdX" /> -> incrémenté de 1 le id et mettre le bon rId
     update::update_presentation_xml(src, r_id)?;

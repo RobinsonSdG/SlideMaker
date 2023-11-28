@@ -1,9 +1,11 @@
-use std::{fs::{File, OpenOptions}, io::{Write, self, Read, Seek}};
+use std::{fs::{File, OpenOptions, self}, io::{Write, self, Read, Seek}};
 use crate::utils::request::get_img_resp;
 
-use jumprankingsapi::models::ranking_model::Ranking;
+use jumprankingsapi::models::ranking_model::{Ranking, Rank};
 use minidom::Element;
+use rand::Rng;
 use regex::Regex;
+use walkdir::WalkDir;
 use xml::{EventReader, reader::XmlEvent};
 
 pub fn update_image(src: String, img: &str, rel_nb: i8) -> std::io::Result<()> {
@@ -97,7 +99,7 @@ pub fn update_rels(src: String, slide_num: i8) -> std::io::Result<i32> {
     Ok(id)
 }
 
-pub fn update_miniature_images(src: &str, ranking: &Ranking) -> io::Result<()> {
+pub fn update_miniature_image(src: &str, ranking: &Ranking) -> io::Result<()> {
     // cover
     let cover_image = &ranking.cover;
     let cover_image_src = format!("{}/ppt/media/coverPage.png", src);
@@ -114,7 +116,7 @@ pub fn update_miniature_images(src: &str, ranking: &Ranking) -> io::Result<()> {
         }
     }
 
-    update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), "../media/coverPage.png", 3)?;
+    update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), "../media/coverPage.png", 4)?;
     Ok(())
 }
 
@@ -149,10 +151,11 @@ pub fn update_slide(src: &str, slide_num: i8, rank: i8, rank_changement: Option<
     let mut input_contents = String::new();
     input_file.read_to_string(&mut input_contents)?;
 
-    let re1 = Regex::new(r"<a:t>([+-]?\d+)</a:t>").unwrap();
+    let re1 = Regex::new(r"<a:t>-3</a:t>").unwrap();
     let re2 = Regex::new(r"<a:t>([a-zA-Z\s]+)</a:t>").unwrap();
     let re3 = Regex::new(r"<a:t>\(#([0-9]+)\)</a:t>").unwrap();
-    let re4 = Regex::new(r#"<a:srgbClr val="BB1A00"/></a:solidFill></a:ln><a:solidFill><a:srgbClr val="FFB10B"/></a:solidFill><a:latin typeface="Bahnschrift SemiBold SemiConden""#).unwrap();
+    // let re4 = Regex::new(r#"<a:srgbClr val="BB1A00"/></a:solidFill></a:ln><a:solidFill><a:srgbClr val="FFB10B"/></a:solidFill><a:latin typeface="Bahnschrift SemiBold SemiConden""#).unwrap();
+    let re5: Regex = Regex::new(r"<a:t>8</a:t>").unwrap();
     
     let mut replacement = String::new();
     let mut color = "";
@@ -199,18 +202,17 @@ pub fn update_slide(src: &str, slide_num: i8, rank: i8, rank_changement: Option<
     } else {
         println!("Aucune troisième correspondance trouvée dans le fichier.");
     }
-    if color_change {
-        if let Some(caps) = re4.captures(&input_contents){
-            let first_match = caps.get(0).unwrap().as_str();
+    if rank > 7 {
+        if let Some(caps) = re5.captures(&input_contents) {
+        let first_match = caps.get(0).unwrap().as_str();
 
-            modified_contents = modified_contents.replacen(first_match, format!("<a:srgbClr val=\"{}\"/></a:solidFill></a:ln><a:solidFill><a:srgbClr val=\"{}\"/></a:solidFill><a:latin typeface=\"Bahnschrift SemiBold SemiConden\"", &outline, &color).as_str(), 1);
-    
-            println!("Remplacement de la quatrième occurrence terminé. Le résultat a été enregistré dans '{}'", &output_filename);
+        modified_contents = modified_contents.replacen(first_match, format!("<a:t>{}</a:t>", &rank).as_str(), 1);
+
+        println!("Remplacement de la quatrième occurrence terminé. Le résultat a été enregistré dans '{}'", &output_filename);
         } else {
             println!("Aucune quatrième correspondance trouvée dans le fichier.");
         }
     }
-     
 
     let mut output_file = File::create(&output_filename)?;
     output_file.write_all(modified_contents.as_bytes())?;
@@ -246,5 +248,44 @@ pub fn update_presentation_xml(src: &str, r_id: i32) -> std::io::Result<()> {
     // Écrire le contenu modifié dans le fichier
     std::fs::write(&input_file_path, xml_content).expect("Impossible d'écrire dans le fichier");
    
+    Ok(())
+}
+
+pub fn update_image_from_media(src: &str, slide_num: i8, rank: &Rank, current_slide: i8, rank_position: i8) -> std::io::Result<()> {
+    fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
+
+    let mut rng = rand::thread_rng();
+    for file in fs::read_dir("./Media").unwrap() {
+        let name: String = rank.name.chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
+        let file_name = file.unwrap().file_name();
+        let file_name_to_compare: String = file_name.to_string_lossy().chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
+        if file_name_to_compare.eq_ignore_ascii_case(&name) {
+            let path = format!("Media/{}", &name);
+            let nb_images = WalkDir::new(path).into_iter().count();
+            let mut img_number = 0;
+            if nb_images > 1 {
+                img_number = rng.gen_range(0..nb_images-1);
+            }
+            for (i, image) in fs::read_dir(format!("./Media/{}", &file_name.to_string_lossy())).unwrap().enumerate() {
+                if i == img_number {
+                    let image_path = image.as_ref().unwrap().path();
+                    let new_image_path = format!("{}/ppt/media/{}", src, image.as_ref().unwrap().file_name().to_string_lossy());
+                    let relative_image_path = format!("../media/{}", image.as_ref().unwrap().file_name().to_string_lossy());
+                    fs::copy(image_path, new_image_path)?;
+                    update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), &relative_image_path, 1)?;
+                    break;
+                }
+            }
+            if rank_position <= 7 && rank_position > 0 {
+                let image_path = format!("./Media/Numbers/{}.png", rank_position);
+                let new_image_path = format!("{}/ppt/media/{}.png", src, rank_position);
+                let relative_image_path = format!("../media/{}.png", rank_position);
+                fs::copy(image_path, new_image_path)?;
+                update_image(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide), &relative_image_path, 0)?;
+            }
+            break;
+        }
+    }
+
     Ok(())
 }
