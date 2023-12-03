@@ -10,7 +10,7 @@ use pptx::create;
 use std::path::Path;
 
 fn main() -> std::io::Result<()> {
-    let mut src = "SlideTemplateStpHiverV3";
+    let mut src = "SlideTemplateStpHiverV4";
     let year = 2023;
     let week = 51;
     
@@ -28,9 +28,11 @@ fn main() -> std::io::Result<()> {
     // COLOR PAGES
     let mut nb = 1;
     let mut miniature_image = 0;
-    for rank in ranking.absent {
-        create::add_absent_slide(src, 8, counter_slide, &rank)?;
-        counter_slide += 1;
+    if ranking.absent.len() > 0 {
+        for rank in ranking.absent {
+            create::add_absent_slide(src, 8, counter_slide, &rank)?;
+            counter_slide += 1;
+        }
     }
     
     for image_src in ranking.color_pages {
