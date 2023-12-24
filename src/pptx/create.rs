@@ -18,20 +18,16 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
     if rank_position == 1 {
         slide_num = 5;
     } else if variation < 0 {
-        if rank_position > 7 {
+        if rank_position > 7 || variation < -3 {
             slide_num = 4;
         } else {
             slide_num = 6;
         }
     } else if variation > 0 {
-        if (variation < 3) && rank_position < 3 {
-            slide_num = 6;
-        } else if rank_position < 3 || (rank_position < 7 && (variation > 3)){
+        if rank_position <= 3 && variation >= 1 || variation > 3 || (rank_position <= 7 && variation >= 2){ // UP
             slide_num = 3;
-        } else if rank_position < 7 && (variation < 3) {
-            slide_num = 4;
-        } else {
-            slide_num = 6;
+        } else { // STILL
+            slide_num = 6; 
         }
     } else {
         slide_num = 6;
@@ -70,9 +66,30 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
     Ok(())
 }
 
-pub fn add_color_slide(src: &str, slide_num: i8, nb_slide: i8, current_slide: i8) -> std::io::Result<()> {
-    // 1. copier slideX.xml
-    fs::copy(format!("{}/ppt/slides/slide{}.xml", src, slide_num), format!("{}/ppt/slides/slide{}.xml", src, current_slide))?;
+pub fn add_color_slide(src: &str, slide_num: i8, nb_slide: i8, current_slide: i8, name: &String) -> std::io::Result<()> {
+    let input_filename = format!("{}/ppt/slides/slide{}.xml", src, slide_num);
+    let output_filename = format!("{}/ppt/slides/slide{}.xml", src, current_slide);
+
+    let mut input_file = File::open(input_filename)?;
+    let mut input_contents = String::new();
+    input_file.read_to_string(&mut input_contents)?;
+
+    let re = Regex::new(r"<a:t>([a-zA-Z\s]+)</a:t>").unwrap();
+
+    let mut modified_contents: String = "".to_string();
+    if let Some(caps) = re.captures(&input_contents) {
+        let first_match = caps.get(0).unwrap().as_str();
+
+        modified_contents = input_contents.replacen(first_match, format!("<a:t>{}</a:t>", &name).as_str(), 1);
+
+        println!("Remplacement de la deuxième occurrence terminé. Le résultat a été enregistré dans '{}'", &output_filename);
+    } else {
+        println!("Aucune deuxième correspondance trouvée dans le fichier.");
+    }
+
+    let mut output_file = File::create(&output_filename)?;
+    output_file.write_all(modified_contents.as_bytes())?;
+
 
     fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
     

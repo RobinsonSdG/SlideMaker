@@ -10,9 +10,9 @@ use pptx::create;
 use std::path::Path;
 
 fn main() -> std::io::Result<()> {
-    let mut src = "SlideTemplateStpHiverV4";
-    let year = 2023;
-    let week = 51;
+    let mut src = "SlideTemplateStpHiverV5";
+    let year = 2024;
+    let week = 3;
     
     let ranking = operations::get_ranking(year, week);
     let previous_ranking = operations::get_ranking(year, week-1);
@@ -35,33 +35,35 @@ fn main() -> std::io::Result<()> {
         }
     }
     
-    for image_src in ranking.color_pages {
-        let img_resp = request::get_img_resp(image_src.as_str());
-
-        match img_resp.status().is_success() {
-            true => {
-                let img_bytes = img_resp.bytes().unwrap(); 
-                let img = image::load_from_memory(&img_bytes).unwrap();
-                img.save(format!("{}/ppt/media/colorPage{}.png", src, nb)).unwrap();
-                if img.height() > img.width() {
-                    create::add_color_slide(src, 1, nb, counter_slide)?;
-                    // miniature
-                    match miniature_image {
-                        0 | 1 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 0)?,
-                        2 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 2)?,
-                        _ => {},
-                    };
-                    miniature_image += 1;
-                    counter_slide += 1;
-                } else {
-                    create::add_color_slide(src, 2, nb, counter_slide)?;
-                    counter_slide += 1;
+    for (name, color_images) in ranking.color_pages {
+        for image_src in color_images {
+            let img_resp = request::get_img_resp(image_src.as_str());
+    
+            match img_resp.status().is_success() {
+                true => {
+                    let img_bytes = img_resp.bytes().unwrap(); 
+                    let img = image::load_from_memory(&img_bytes).unwrap();
+                    img.save(format!("{}/ppt/media/colorPage{}.png", src, nb)).unwrap();
+                    if img.height() > img.width() {
+                        create::add_color_slide(src, 1, nb, counter_slide, &name)?;
+                        // miniature
+                        match miniature_image {
+                            0 | 1 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 0)?,
+                            2 => update::update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), format!("../media/colorPage{}.png", nb).as_str(), 2)?,
+                            _ => {},
+                        };
+                        miniature_image += 1;
+                        counter_slide += 1;
+                    } else {
+                        create::add_color_slide(src, 2, nb, counter_slide, &name)?;
+                        counter_slide += 1;
+                    }
+                    nb+=1;
                 }
-                nb+=1;
-            }
-
-            false => {
-                panic!("error getting color page image");
+    
+                false => {
+                    panic!("error getting color page image");
+                }
             }
         }
     }
