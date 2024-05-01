@@ -101,7 +101,7 @@ pub fn update_rels(src: String, slide_num: i8) -> std::io::Result<i32> {
 
 pub fn update_miniature_image(src: &str, ranking: &Ranking) -> io::Result<()> {
     // cover
-    let cover_image = &ranking.cover;
+    let cover_image = &ranking.cover.imgs[0];
     let cover_image_src = format!("{}/ppt/media/coverPage.png", src);
     let img_resp = get_img_resp(cover_image.as_str());
 
@@ -117,6 +117,7 @@ pub fn update_miniature_image(src: &str, ranking: &Ranking) -> io::Result<()> {
     }
 
     update_image(format!("{}/ppt/slides/_rels/slide7.xml.rels", src), "../media/coverPage.png", 4)?;
+    update_image(format!("{}/ppt/slides/_rels/slide10.xml.rels", src), "../media/coverPage.png", 0)?;
     Ok(())
 }
 
@@ -131,7 +132,7 @@ pub fn update_miniature_chapter_number(src: &str, week: i32) -> io::Result<()>{
     file.read_to_string(&mut content)?;
 
     // Effectuer le remplacement
-    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", &week));
+    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", "22-23"));
 
     // Rembobiner le curseur du fichier au début et écrire les modifications
     file.seek(std::io::SeekFrom::Start(0))?;
@@ -251,12 +252,11 @@ pub fn update_presentation_xml(src: &str, r_id: i32) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn update_image_from_media(src: &str, slide_num: i8, rank: &Rank, current_slide: i8, rank_position: i8) -> std::io::Result<()> {
+pub fn update_image_from_media(src: &str, slide_num: i8, name: &String, current_slide: i8, rank_position: i8) -> std::io::Result<()> {
     fs::copy(format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, slide_num), format!("{}/ppt/slides/_rels/slide{}.xml.rels", src, current_slide))?;
 
     let mut rng = rand::thread_rng();
     for file in fs::read_dir("./Media").unwrap() {
-        let name: String = rank.name.chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
         let file_name = file.unwrap().file_name();
         let file_name_to_compare: String = file_name.to_string_lossy().chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect();
         if file_name_to_compare.eq_ignore_ascii_case(&name) {
