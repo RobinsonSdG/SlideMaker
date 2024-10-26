@@ -5,9 +5,6 @@ use jumprankingsapi::models::ranking_model::Ranking;
 
 pub fn get_ranking( year: i32, week: i32, retry: bool) -> Ranking {
     let mut url = format!("https://wsj.fly.dev/ranking/{}/{}", year, week);
-    if week == 22 {
-        url = format!("https://wsj.fly.dev/ranking/{}/{}", year, "22-23");
-    }
     let ranking: Ranking = match reqwest::blocking::get(url) {
         Ok(v) => match v.status().is_success() {
             true => {

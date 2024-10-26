@@ -11,6 +11,7 @@ pub fn add_slide(src: &str, rank: &Rank, rank_position: i8, previous_rank_positi
 
     let mut variation: i8 = 0;
     if let Some(prev) = previous_rank_position {
+        print!("{} // {}", prev , rank_position);
         variation = prev - rank_position
     }
     if rank_position == 1 {

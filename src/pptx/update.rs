@@ -102,6 +102,9 @@ pub fn update_rels(src: String, slide_num: i8) -> std::io::Result<i32> {
 pub fn update_miniature_image(src: &str, ranking: &Ranking) -> io::Result<()> {
     // cover
     let cover_image = &ranking.cover.imgs[0];
+    if cover_image == "" {
+       return Ok(())
+    }
     let cover_image_src = format!("{}/ppt/media/coverPage.png", src);
     let img_resp = get_img_resp(cover_image.as_str());
 
@@ -132,7 +135,8 @@ pub fn update_miniature_chapter_number(src: &str, week: i32) -> io::Result<()>{
     file.read_to_string(&mut content)?;
 
     // Effectuer le remplacement
-    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", "22-23"));
+    // let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", week));
+    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", &week));
 
     // Rembobiner le curseur du fichier au début et écrire les modifications
     file.seek(std::io::SeekFrom::Start(0))?;
