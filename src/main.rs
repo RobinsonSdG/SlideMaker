@@ -43,6 +43,7 @@ fn main() -> std::io::Result<()> {
         counter_slide += 1;
     }
     
+    
     // color pages
     for figure in ranking.color_pages {
         let name = figure.rank.name;
