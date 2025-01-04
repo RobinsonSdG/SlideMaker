@@ -13,63 +13,79 @@ pub fn get_ranking( year: i32, week: i32, retry: bool) -> Ranking {
             "ranking": [
                 {
                     "name": "One Piece",
-                    "chapter": 9
-                },
-                {
-                    "name": "Blue Box",
-                    "chapter": 16
+                    "chapter": 25
                 },
                 {
                     "name": "Sakamoto Days",
-                    "chapter": 17
+                    "chapter": 41
+                },
+                {
+                    "name": "Blue Box",
+                    "chapter": 37
                 },
                 {
                     "name": "Jujutsu Kaisen",
-                    "chapter": 13
+                    "chapter": 24
                 },
                 {
                     "name": "My Hero Academia",
-                    "chapter": 13
+                    "chapter": 20
                 },
                 {
                     "name": "Akane-banashi",
-                    "chapter": 14
+                    "chapter": 35
                 },
                 {
                     "name": "Witch Watch",
-                    "chapter": 18
+                    "chapter": 42
+                },
+                {
+                    "name": "Hima-Ten!",
+                    "chapter": 10
                 },
                 {
                     "name": "Mission: Yozakura Family",
-                    "chapter": 15
-                },
-                {
-                    "name": "Kill Blue",
-                    "chapter": 16
-                },
-                {
-                    "name": "Undead Unluck",
-                    "chapter": 15
+                    "chapter": 38
                 },
                 {
                     "name": "Me and Roboco",
-                    "chapter": 17
-                },
-                {
-                    "name": "The Elusive Samurai",
-                    "chapter": 19
-                },
-                {
-                    "name": "Nue's Exorcist",
-                    "chapter": 15
+                    "chapter": 41
                 },
                 {
                     "name": "Kagurabachi",
-                    "chapter": 16
+                    "chapter": 37
+                },
+                {
+                    "name": "The Elusive Samurai",
+                    "chapter": 42
+                },
+                {
+                    "name": "Undead Unluck",
+                    "chapter": 39
+                },
+                {
+                    "name": "Super Psychic Policeman Chojo",
+                    "chapter": 26
+                },
+                {
+                    "name": "Nue's Exorcist",
+                    "chapter": 37
+                },
+                {
+                    "name": "Kill Blue",
+                    "chapter": 39
+                },
+                {
+                    "name": "Astro Royale",
+                    "chapter": 19
+                },
+                {
+                    "name": "Ultimate Exorcist Kiyoshi",
+                    "chapter": 13
                 },
                 {
                     "name": "Green Green Greens",
-                    "chapter": 13
+                    "chapter": 18
                 },
                 {
                     "name": "MamaYuyu",
@@ -84,12 +100,28 @@ pub fn get_ranking( year: i32, week: i32, retry: bool) -> Ranking {
                     "chapter": 8
                 },
                 {
+                    "name": "Dear Anemone",
+                    "chapter": 10
+                },
+                {
+                    "name": "Kyokuto Necromance",
+                    "chapter": 11
+                },
+                {
                     "name": "Shadow Eliminators",
                     "chapter": 12
                 },
                 {
                     "name": "Two on Ice",
                     "chapter": 17
+                },
+                {
+                    "name": "Psych House",
+                    "chapter": 10
+                },
+                {
+                    "name": "Yokai Buster Murakami",
+                    "chapter": 14
                 }
             ],
             "newbies": [],
