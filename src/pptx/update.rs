@@ -136,7 +136,7 @@ pub fn update_miniature_chapter_number(src: &str, week: i32) -> io::Result<()>{
 
     // Effectuer le remplacement
     // let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", week));
-    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", &week));
+    let modified_content = content.replace("<a:t>#43</a:t>", &format!("<a:t>#{}</a:t>", "4-5"));
 
     // Rembobiner le curseur du fichier au début et écrire les modifications
     file.seek(std::io::SeekFrom::Start(0))?;

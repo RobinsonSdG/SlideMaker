@@ -3,8 +3,11 @@ use std::time::Duration;
 
 use jumprankingsapi::models::ranking_model::Ranking;
 
-pub fn get_ranking( year: i32, week: i32, retry: bool) -> Ranking {
+pub fn get_ranking( mut year: i32, mut week: i32, retry: bool) -> Ranking {
     let mut url = format!("https://wsj.fly.dev/ranking/{}/{}", year, week);
+    if week == 4 {
+        url = format!("https://wsj.fly.dev/ranking/{}/4-5", year);
+    }
     let ranking: Ranking = match reqwest::blocking::get(url) {
         Ok(v) => match v.status().is_success() {
             true => {

@@ -11,9 +11,9 @@ use pptx::create;
 use std::path::Path;
 
 fn main() -> std::io::Result<()> {
-    let mut src = "SlidePrintempsV6";
-    let year = 2024;
-    let week = 47;
+    let mut src = "SlideHiver2025";
+    let year = 2025;
+    let week = 4;
     
     let ranking = operations::get_ranking(year, week, false);
     let previous_ranking = operations::get_ranking(year, week-1, false);
@@ -73,7 +73,7 @@ fn main() -> std::io::Result<()> {
                 }
     
                 false => {
-                    panic!("error getting color page image");
+                    panic!("error getting color page image: {}", image_src.as_str());
                 }
             }
         }
