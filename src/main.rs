@@ -13,7 +13,7 @@ use std::path::Path;
 fn main() -> std::io::Result<()> {
     let mut src = "SlideHiver2025";
     let year = 2025;
-    let week = 4;
+    let week = 6;
     
     let ranking = operations::get_ranking(year, week, false);
     let previous_ranking = operations::get_ranking(year, week-1, false);
@@ -52,7 +52,14 @@ fn main() -> std::io::Result<()> {
     
             match img_resp.status().is_success() {
                 true => {
-                    let img_bytes = img_resp.bytes().unwrap(); 
+                    let img_bytes = match img_resp.bytes() {
+                        Ok(b) => b,
+                        Err(e) => {
+                            println!("Error getting image! {e}");
+                            continue
+                        } 
+                    };
+                    // let img_bytes = img_resp.bytes().unwrap(); 
                     let img = image::load_from_memory(&img_bytes).unwrap();
                     img.save(format!("{}/ppt/media/colorPage{}.png", src, nb)).unwrap();
                     if img.height() > img.width() {
