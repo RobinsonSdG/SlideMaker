@@ -11,9 +11,9 @@ use pptx::create;
 use std::path::Path;
 
 fn main() -> std::io::Result<()> {
-    let mut src = "SlideHiver2025";
+    let mut src = "SlideHiver2025V2";
     let year = 2025;
-    let week = 6;
+    let week = 19;
     
     let ranking = operations::get_ranking(year, week, false);
     let previous_ranking = operations::get_ranking(year, week-1, false);
